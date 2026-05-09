@@ -79,8 +79,21 @@ export default function Gallery() {
             {displayItems.map((item) => (
               <div key={item._id} className="break-inside-avoid group relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                 onClick={() => setLightbox(item)}>
-                <img src={item.fileUrl || item.thumbnailUrl} alt={item.title}
-                  className="w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                {item.mediaType === 'video' ? (
+                  <video
+                    src={item.fileUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full object-cover group-hover:scale-105 transition-transform duration-500 bg-black"
+                    style={{ minHeight: '200px', maxHeight: '320px' }}
+                    onMouseEnter={e => e.target.play()}
+                    onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }}
+                  />
+                ) : (
+                  <img src={item.fileUrl || item.thumbnailUrl} alt={item.title}
+                    className="w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <p className="text-white font-heading font-semibold text-sm">{item.title}</p>
@@ -91,9 +104,9 @@ export default function Gallery() {
                   <div className="absolute top-3 right-3"><Star size={14} className="text-yellow-400 fill-yellow-400" /></div>
                 )}
                 {item.mediaType === 'video' && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                      <Play size={20} className="text-white fill-white ml-1" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:opacity-0 transition-opacity duration-300">
+                    <div className="w-14 h-14 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/60">
+                      <Play size={24} className="text-white fill-white ml-1" />
                     </div>
                   </div>
                 )}
