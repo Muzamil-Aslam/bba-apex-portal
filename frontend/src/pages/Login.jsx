@@ -27,11 +27,6 @@ export default function Login() {
     } finally { setLoading(false); }
   };
 
-  const fillDemo = (role) => {
-    const creds = { admin: { email: 'admin@bbapex.cu.edu.in', password: 'Admin@123' }, student: { email: 'priya@student.cu.edu.in', password: 'Student@123' }, faculty: { email: 'faculty@bbapex.cu.edu.in', password: 'Faculty@123' } };
-    setForm(creds[role]);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-maroon-50 flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
@@ -42,16 +37,6 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold font-heading text-gray-900">Welcome Back</h1>
           <p className="text-gray-500 font-body text-sm mt-1">Sign in to BBA Apex Portal</p>
-        </div>
-
-        {/* Demo credentials */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-          <p className="text-xs font-semibold text-blue-700 font-heading mb-2">🔑 Demo Credentials (click to fill)</p>
-          <div className="flex gap-2 flex-wrap">
-            {['student', 'faculty', 'admin'].map(role => (
-              <button key={role} onClick={() => fillDemo(role)} className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full font-heading capitalize transition-colors">{role}</button>
-            ))}
-          </div>
         </div>
 
         <div className="card p-8">
