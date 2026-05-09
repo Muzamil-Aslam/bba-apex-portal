@@ -50,20 +50,31 @@ export default function AdminPanel() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [dash, eventsRes, studentsRes, staffRes, analyticsRes] = await Promise.allSettled([
+      const [dash, eventsRes, studentsRes, staffRes, analyticsRes, galleryRes] = await Promise.allSettled([
         api.get('/dashboard/admin'),
         api.get('/events?limit=50'),
         api.get('/users?limit=30'),
         api.get('/users/staff'),
         api.get('/events/analytics'),
+        api.get('/gallery'),
       ]);
       if (dash.status === 'fulfilled') setDashData(dash.value.data);
       if (eventsRes.status === 'fulfilled') setEvents(eventsRes.value.data.events);
       if (studentsRes.status === 'fulfilled') setStudents(studentsRes.value.data.students);
       if (staffRes.status === 'fulfilled') setStaff(staffRes.value.data.staff || []);
       if (analyticsRes.status === 'fulfilled') setAnalytics(analyticsRes.value.data);
+      if (galleryRes.status === 'fulfilled') setGallery(galleryRes.value.data.gallery || []);
     } catch { toast.error('Failed to load data'); }
     finally { setLoading(false); }
+  };
+
+  const handleDeleteGallery = async (id, title) => {
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/gallery/${id}`);
+      toast.success('Media deleted');
+      setGallery(prev => prev.filter(g => g._id !== id));
+    } catch { toast.error('Failed to delete media'); }
   };
 
   // Staff handlers
@@ -617,31 +628,82 @@ export default function AdminPanel() {
 
         {/* GALLERY TAB */}
         {activeTab === 'gallery' && (
-          <div className="max-w-2xl">
-            <h2 className="font-heading font-bold text-xl text-gray-900 mb-6">Upload Gallery Media</h2>
-            <div className="card p-8">
-              <form onSubmit={handleGalleryUpload} className="space-y-5">
-                {[['title', 'Photo/Video Title', 'text'], ['eventName', 'Event Name', 'text'], ['description', 'Description (optional)', 'text']].map(([field, label]) => (
-                  <div key={field}>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2 font-heading">{label}</label>
-                    <input type="text" value={galleryForm[field]} onChange={e => setGalleryForm(p => ({ ...p, [field]: e.target.value }))} className="input-field" required={field !== 'description'} />
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-heading font-bold text-xl text-gray-900">
+                Gallery Media <span className="text-gray-400 font-normal text-base">({gallery.length} items)</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Upload Form */}
+              <div className="lg:col-span-1">
+                <div className="card p-6 sticky top-4">
+                  <h3 className="font-heading font-bold text-base text-gray-900 mb-4 flex items-center gap-2"><Upload size={16} /> Upload New Media</h3>
+                  <form onSubmit={handleGalleryUpload} className="space-y-4">
+                    {[['title', 'Photo/Video Title'], ['eventName', 'Event Name'], ['description', 'Description (optional)']].map(([field, label]) => (
+                      <div key={field}>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1 font-heading">{label}</label>
+                        <input type="text" value={galleryForm[field]} onChange={e => setGalleryForm(p => ({ ...p, [field]: e.target.value }))} className="input-field py-2 text-sm" required={field !== 'description'} />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1 font-heading">Media Type</label>
+                      <select value={galleryForm.mediaType} onChange={e => setGalleryForm(p => ({ ...p, mediaType: e.target.value }))} className="input-field py-2 text-sm">
+                        <option value="image">📷 Image</option>
+                        <option value="video">🎥 Video</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1 font-heading">File <span className="text-red-500">*</span></label>
+                      <input type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files[0])} className="input-field py-2 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-maroon-50 file:text-maroon hover:file:bg-maroon-100" required />
+                    </div>
+                    <button type="submit" disabled={submitting} className="btn-primary w-full py-2.5 flex items-center justify-center gap-2 disabled:opacity-60 text-sm">
+                      {submitting ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>Uploading...</> : <><Upload size={14} /> Upload Media</>}
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              {/* Media Grid */}
+              <div className="lg:col-span-2">
+                {gallery.length === 0 ? (
+                  <div className="card p-12 text-center text-gray-400">
+                    <Image size={48} className="mx-auto mb-4 text-gray-300" />
+                    <p className="font-heading font-semibold text-gray-500">No media uploaded yet</p>
+                    <p className="text-sm font-body mt-1">Upload photos and videos using the form</p>
                   </div>
-                ))}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 font-heading">Media Type</label>
-                  <select value={galleryForm.mediaType} onChange={e => setGalleryForm(p => ({ ...p, mediaType: e.target.value }))} className="input-field">
-                    <option value="image">📷 Image</option>
-                    <option value="video">🎥 Video</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 font-heading">File <span className="text-red-500">*</span></label>
-                  <input type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files[0])} className="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-maroon-50 file:text-maroon hover:file:bg-maroon-100" required />
-                </div>
-                <button type="submit" disabled={submitting} className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-60">
-                  {submitting ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>Uploading...</> : <><Upload size={16} /> Upload Media</>}
-                </button>
-              </form>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {gallery.map(item => (
+                      <div key={item._id} className="group relative rounded-xl overflow-hidden shadow-md bg-gray-100">
+                        {item.mediaType === 'video' ? (
+                          <video src={item.fileUrl} muted preload="metadata" className="w-full h-40 object-cover" />
+                        ) : (
+                          <img src={item.fileUrl} alt={item.title} className="w-full h-40 object-cover" />
+                        )}
+                        {/* Video badge */}
+                        {item.mediaType === 'video' && (
+                          <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full font-heading">🎥 Video</div>
+                        )}
+                        {/* Hover overlay with delete */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3">
+                          <button
+                            onClick={() => handleDeleteGallery(item._id, item.title)}
+                            className="self-end bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                          <div>
+                            <p className="text-white text-xs font-heading font-semibold truncate">{item.title}</p>
+                            <p className="text-gray-300 text-xs font-body truncate">{item.eventName}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

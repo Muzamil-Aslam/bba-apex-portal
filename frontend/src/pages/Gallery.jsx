@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Image, Play, Star, Search } from 'lucide-react';
+import { X, Image, Play, Star, Search, Trash2 } from 'lucide-react';
 import api from '../utils/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function Gallery() {
   const [gallery, setGallery] = useState({});
@@ -11,6 +13,8 @@ export default function Gallery() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [activeGroup, setActiveGroup] = useState('All');
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'faculty';
 
   useEffect(() => {
     api.get('/gallery').then(({ data }) => {
@@ -18,6 +22,17 @@ export default function Gallery() {
       setAllItems(data.gallery || []);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (e, id, title) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/gallery/${id}`);
+      setAllItems(prev => prev.filter(i => i._id !== id));
+      if (lightbox?._id === id) setLightbox(null);
+      toast.success('Media deleted');
+    } catch { toast.error('Failed to delete'); }
+  };
 
   const groups = ['All', ...Object.keys(gallery)];
   const filtered = allItems.filter(item => {
@@ -110,6 +125,15 @@ export default function Gallery() {
                     </div>
                   </div>
                 )}
+                {isAdmin && (
+                  <button
+                    onClick={(e) => handleDelete(e, item._id, item.title)}
+                    className="absolute top-3 left-3 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg z-10"
+                    title="Delete"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -130,6 +154,14 @@ export default function Gallery() {
           <button className="absolute top-5 right-5 text-white hover:text-gray-300 transition-colors z-10" onClick={() => setLightbox(null)}>
             <X size={32} />
           </button>
+          {isAdmin && (
+            <button
+              className="absolute top-5 left-5 bg-red-500 hover:bg-red-600 text-white rounded-full px-3 py-1.5 text-xs font-heading font-semibold flex items-center gap-1.5 z-10 transition-colors"
+              onClick={(e) => handleDelete(e, lightbox._id, lightbox.title)}
+            >
+              <Trash2 size={13} /> Delete
+            </button>
+          )}
           <div className="max-w-4xl max-h-[85vh] relative" onClick={e => e.stopPropagation()}>
             {lightbox.mediaType === 'video' ? (
               <video
