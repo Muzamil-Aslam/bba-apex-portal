@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Award, Trophy, BookOpen, Download, User, TrendingUp, Clock, CheckCircle, XCircle, QrCode, Star, MessageSquare } from 'lucide-react';
+import { Calendar, Award, Trophy, BookOpen, Download, User, TrendingUp, Clock, CheckCircle, XCircle, QrCode, Star, MessageSquare, Trash2 } from 'lucide-react';
 import api from '../utils/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
@@ -94,7 +94,26 @@ export default function StudentDashboard() {
   const [qrModal, setQrModal] = useState(null);
   const [feedbackGiven, setFeedbackGiven] = useState(new Set());
   const [myFeedbacks, setMyFeedbacks] = useState([]);
+  const [cancellingId, setCancellingId] = useState(null);
   const { user } = useAuth();
+
+  const handleCancelRegistration = async (eventId, eventTitle) => {
+    if (!window.confirm(`Cancel your registration for "${eventTitle}"? This cannot be undone.`)) return;
+    setCancellingId(eventId);
+    try {
+      await api.delete(`/registrations/cancel/${eventId}`);
+      toast.success('Registration cancelled.');
+      setDashData(prev => ({
+        ...prev,
+        registrations: prev.registrations.filter(r => r.event?._id !== eventId),
+        stats: { ...prev.stats, totalRegistrations: Math.max(0, prev.stats.totalRegistrations - 1) },
+      }));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not cancel registration');
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -218,7 +237,7 @@ export default function StudentDashboard() {
                           <p className="text-xs text-gray-400 font-body mt-0.5 font-mono">{reg.registrationNumber}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         {reg.event?.points && <span className="text-xs font-bold text-gold-700 bg-yellow-50 px-2 py-1 rounded-full font-heading">+{reg.event.points} pts</span>}
                         <span className={`${statusBadge[reg.status]} capitalize`}>{reg.status}</span>
                         <button
@@ -228,6 +247,18 @@ export default function StudentDashboard() {
                         >
                           <QrCode size={16} />
                         </button>
+                        {reg.status !== 'attended' && reg.status !== 'cancelled' && reg.event?.status === 'upcoming' && (
+                          <button
+                            onClick={() => handleCancelRegistration(reg.event._id, reg.event.title)}
+                            disabled={cancellingId === reg.event._id}
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Cancel Registration"
+                          >
+                            {cancellingId === reg.event._id
+                              ? <span className="w-4 h-4 border-2 border-red-300 border-t-red-500 rounded-full animate-spin block" />
+                              : <Trash2 size={15} />}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

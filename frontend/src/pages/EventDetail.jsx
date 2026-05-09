@@ -58,6 +58,21 @@ export default function EventDetail() {
     }
   };
 
+  const handleCancelRegistration = async () => {
+    if (!window.confirm('Are you sure you want to cancel your registration? This cannot be undone.')) return;
+    setRegistering(true);
+    try {
+      await api.delete(`/registrations/cancel/${id}`);
+      toast.success('Registration cancelled successfully.');
+      setIsRegistered(false);
+      setEvent(prev => ({ ...prev, currentParticipants: Math.max(0, prev.currentParticipants - 1) }));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not cancel registration');
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const handleShare = async () => {
     const url  = window.location.href;
     const text = `Check out this event: ${event.title} — Register on BBA Apex Portal!`;
@@ -165,6 +180,15 @@ export default function EventDetail() {
                 <p className="font-heading font-bold text-green-700 text-lg">You're Registered!</p>
                 <p className="text-gray-500 text-sm font-body mt-1">Check your dashboard for details</p>
                 <Link to="/dashboard" className="btn-primary w-full text-center block mt-4">Go to Dashboard</Link>
+                {event.status === 'upcoming' && !isDeadlinePassed && (
+                  <button
+                    onClick={handleCancelRegistration}
+                    disabled={registering}
+                    className="w-full mt-3 py-2.5 rounded-xl border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-400 font-heading font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {registering ? 'Cancelling...' : '✕ Cancel Registration'}
+                  </button>
+                )}
               </div>
             ) : (
               <>
