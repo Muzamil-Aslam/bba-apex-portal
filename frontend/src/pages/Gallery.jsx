@@ -118,7 +118,20 @@ export default function Gallery() {
             <X size={32} />
           </button>
           <div className="max-w-4xl max-h-[85vh] relative" onClick={e => e.stopPropagation()}>
-            <img src={lightbox.fileUrl} alt={lightbox.title} className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl" />
+            {lightbox.mediaType === 'video' ? (
+              <video
+                src={lightbox.fileUrl}
+                controls
+                autoPlay
+                className="max-w-full max-h-[80vh] rounded-xl shadow-2xl outline-none"
+                style={{ maxWidth: '80vw' }}
+              >
+                <source src={lightbox.fileUrl} />
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              <img src={lightbox.fileUrl} alt={lightbox.title} className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl" />
+            )}
             <div className="text-center mt-4">
               <p className="text-white font-heading font-bold text-lg">{lightbox.title}</p>
               <p className="text-gray-400 text-sm font-body mt-1">{lightbox.eventName}</p>
