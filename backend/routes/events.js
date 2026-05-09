@@ -1,0 +1,14 @@
+const express = require('express');
+const router = express.Router();
+const { getEvents, getEvent, createEvent, updateEvent, deleteEvent, getStats, archiveEvent, getAnalytics, getEventQRCode } = require('../controllers/eventController');
+const { protect, authorize } = require('../middleware/auth');
+router.get('/', getEvents);
+router.get('/stats', getStats);
+router.get('/analytics', protect, authorize('admin','faculty'), getAnalytics);
+router.get('/:id/qrcode', protect, authorize('admin','faculty'), getEventQRCode);
+router.get('/:id', getEvent);
+router.post('/', protect, authorize('admin','faculty'), createEvent);
+router.put('/:id', protect, authorize('admin','faculty'), updateEvent);
+router.patch('/:id/archive', protect, authorize('admin','faculty'), archiveEvent);
+router.delete('/:id', protect, authorize('admin','faculty'), deleteEvent);
+module.exports = router;

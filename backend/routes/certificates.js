@@ -1,0 +1,12 @@
+const express = require('express');
+const router = express.Router();
+const { uploadCertificate, getMyCertificates, getCertificatesByUID, getAllCertificates, deleteCertificate, validateUID, bulkUploadFromCSV } = require('../controllers/certificateController');
+const { protect, authorize } = require('../middleware/auth');
+router.get('/my', protect, getMyCertificates);
+router.get('/uid/:uid', getCertificatesByUID);
+router.get('/validate-uid/:uid', protect, authorize('admin','faculty'), validateUID);
+router.get('/', protect, authorize('admin','faculty'), getAllCertificates);
+router.post('/upload', protect, authorize('admin','faculty'), uploadCertificate);
+router.post('/bulk', protect, authorize('admin','faculty'), bulkUploadFromCSV);
+router.delete('/:id', protect, authorize('admin','faculty'), deleteCertificate);
+module.exports = router;

@@ -1,0 +1,12 @@
+const express = require('express');
+const router = express.Router();
+const { registerForEvent, getMyRegistrations, getEventRegistrations, updateAttendance, cancelRegistration, downloadRegistrations, scanQRAttendance } = require('../controllers/registrationController');
+const { protect, authorize } = require('../middleware/auth');
+router.post('/event/:eventId', protect, registerForEvent);
+router.get('/my', protect, getMyRegistrations);
+router.delete('/cancel/:eventId', protect, cancelRegistration);
+router.post('/scan-qr', protect, authorize('admin','faculty'), scanQRAttendance);
+router.get('/event/:eventId', protect, authorize('admin','faculty'), getEventRegistrations);
+router.patch('/:registrationId/attendance', protect, authorize('admin','faculty'), updateAttendance);
+router.get('/event/:eventId/download', protect, authorize('admin','faculty'), downloadRegistrations);
+module.exports = router;
